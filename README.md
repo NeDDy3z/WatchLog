@@ -39,10 +39,6 @@ Watchlog is free clean add-free app for tracking what you have watched, are watc
       <strong>Settings</strong><br />
       <img src="docs/screenshots/settings.png" alt="Settings screen" width="200" />
     </td>
-    <td align="center">
-      <strong>Add (Autofill)</strong><br />
-      <img src="docs/screenshots/media_add_autofill.png" alt="Add autofill screen" width="200" />
-    </td>
   </tr>
   <tr>
     <td align="center">
@@ -50,12 +46,16 @@ Watchlog is free clean add-free app for tracking what you have watched, are watc
       <img src="docs/screenshots/media_add_whisper.png" alt="Add whisper screen" width="200" />
     </td>
     <td align="center">
+      <strong>Add (Autofill)</strong><br />
+      <img src="docs/screenshots/media_add_autofill.png" alt="Add autofill screen" width="200" />
+    </td>
+    <td align="center">
       <strong>Details</strong><br />
-      <img src="docs/screenshots/media_details_description_watchtracking.png" alt="Details screen" width="200" />
+      <img src="docs/screenshots/media_details_description_tracking.png" alt="Details screen" width="200" />
     </td>
     <td align="center">
       <strong>Reminders & Tags</strong><br />
-      <img src="docs/screenshots/media_details_reminder_tags.png" alt="Reminders and tags screen" width="200" />
+      <img src="docs/screenshots/media_details_reminder_tagging.png" alt="Reminders and tags screen" width="200" />
     </td>
   </tr>
 </table>
