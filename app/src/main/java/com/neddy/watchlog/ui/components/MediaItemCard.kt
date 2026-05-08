@@ -66,9 +66,10 @@ fun MediaItemCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    val style = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium
                     Text(
                         text = media.title,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = style,
                         color = MaterialTheme.colorScheme.onSurface,
                         minLines = 2,
                         maxLines = 2,
@@ -88,21 +89,21 @@ fun MediaItemCard(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                }
 
-                Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(2.dp))
 
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    ProgressChip(progress = progress, isMovie = isMovie)
-                    Text(
-                        text = formatDate(media.dateAdded),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        ProgressChip(progress = progress, isMovie = isMovie)
+                        Text(
+                            text = formatDate(media.dateAdded),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
