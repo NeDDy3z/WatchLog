@@ -36,6 +36,10 @@ Watchlog is free clean add-free app for tracking what you have watched, are watc
       <img src="docs/screenshots/watchlist_search.png" alt="Search screen" width="200" />
     </td>
     <td align="center">
+      <strong>Settings</strong><br />
+      <img src="docs/screenshots/settings.png" alt="Settings screen" width="200" />
+    </td>
+    <td align="center">
       <strong>Add (Autofill)</strong><br />
       <img src="docs/screenshots/media_add_autofill.png" alt="Add autofill screen" width="200" />
     </td>
@@ -52,10 +56,6 @@ Watchlog is free clean add-free app for tracking what you have watched, are watc
     <td align="center">
       <strong>Reminders & Tags</strong><br />
       <img src="docs/screenshots/media_details_reminder_tags.png" alt="Reminders and tags screen" width="200" />
-    </td>
-    <td align="center">
-      <strong>Settings</strong><br />
-      <img src="docs/screenshots/settings.png" alt="Settings screen" width="200" />
     </td>
   </tr>
 </table>
