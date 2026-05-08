@@ -1,15 +1,52 @@
+# MacOSX
+.DS_Store
+
+# IntelliJ
 *.iml
-.gradle
-/local.properties
+misc.xml
+deploymentTargetDropDown.xml
+render.experimental.xml
+.idea/
+/.idea/
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+
+# Gradle
+.gradle
+.gradle/
 local.properties
+/local.properties
+build/
+/build
+.cxx
+
+# Log/OS Files
+*.log
+
+# Android Studio generated files and folders
+/captures
+captures/
+.externalNativeBuild
+.externalNativeBuild/
+.cxx/
+*.aab
+*.apk
+output-metadata.json
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google Services (e.g. APIs or Firebase)
+google-services.json
+
+# Android Profiling
+*.hprof
+
+# Other
+temp/
+temp/*

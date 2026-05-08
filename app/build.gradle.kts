@@ -42,29 +42,6 @@ android {
 
 base.archivesName.set("watchlog-v${android.defaultConfig.versionName}")
 
-afterEvaluate {
-    val version = android.defaultConfig.versionName ?: "unknown"
-    val releasesDir = File(rootProject.projectDir, "releases")
-    tasks.named("assembleRelease") {
-        doLast {
-            val releaseDir = project.layout.buildDirectory.dir("outputs/apk/release").get().asFile
-            val src = releaseDir.listFiles()?.firstOrNull { it.extension == "apk" }
-            if (src != null) {
-                releasesDir.mkdirs()
-                val dest = File(releasesDir, "watchlog-v$version-release.apk")
-                if (dest.exists()) {
-                    println("Skipping copy: ${dest.absolutePath} already exists")
-                } else {
-                    src.copyTo(dest, overwrite = false)
-                    println("Saved: ${dest.absolutePath}")
-                }
-            } else {
-                println("WARNING: No APK found in ${releaseDir.absolutePath}")
-            }
-        }
-    }
-}
-
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
