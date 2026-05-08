@@ -5,7 +5,7 @@ Simple, fast watch tracker for movies and TV shows. 🎬
 ![UI](https://img.shields.io/badge/UI-Jetpack%20Compose-4285f4)
 ![Language](https://img.shields.io/badge/language-Kotlin-7f52ff)
 
-## Overview ✨
+## ✨ Overview 
 Watchlog is free clean add-free app for tracking what you have watched, are watching, or want to watch. It focuses on speed and minimal friction: search by title, pick a result from autocomplete, and keep your progress updated without social clutter.
 
 ## 🔧 Features
@@ -62,7 +62,7 @@ Watchlog is free clean add-free app for tracking what you have watched, are watc
 
 </details>
 
-## Releases 📦
+## 📦 Releases 
 - [Releases](../../releases)
 
 ## 🤝 Contributing
