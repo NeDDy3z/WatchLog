@@ -19,22 +19,46 @@ Watchlog is free clean add-free app for tracking what you have watched, are watc
 - Reminder notifications for scheduled watch times
 
 <details>
-<summary>## 📸 Screenshots</summary>
+<summary>📸 Screenshots</summary>
 
-**Watchlist (Home)**
-![Watchlist screenshot](docs/screenshots/watchlist.png)
-
-**Search & Autocomplete**
-![Search screenshot](docs/screenshots/search.png)
-
-**Media Detail**
-![Detail screenshot](docs/screenshots/detail.png)
-
-**Manual Add/Edit**
-![Manual add screenshot](docs/screenshots/manual-add.png)
-
-**Settings**
-![Settings screenshot](docs/screenshots/settings.png)
+<table>
+  <tr>
+    <td align="center">
+      <strong>Home</strong><br />
+      <img src="docs/screenshots/home.png" alt="Home screen" width="200" />
+    </td>
+    <td align="center">
+      <strong>Watchlist</strong><br />
+      <img src="docs/screenshots/watchlist.png" alt="Watchlist screen" width="200" />
+    </td>
+    <td align="center">
+      <strong>Search</strong><br />
+      <img src="docs/screenshots/watchlist_search.png" alt="Search screen" width="200" />
+    </td>
+    <td align="center">
+      <strong>Add (Autofill)</strong><br />
+      <img src="docs/screenshots/media_add_autofill.png" alt="Add autofill screen" width="200" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Add (Whisper)</strong><br />
+      <img src="docs/screenshots/media_add_whisper.png" alt="Add whisper screen" width="200" />
+    </td>
+    <td align="center">
+      <strong>Details</strong><br />
+      <img src="docs/screenshots/media_details_description_watchtracking.png" alt="Details screen" width="200" />
+    </td>
+    <td align="center">
+      <strong>Reminders & Tags</strong><br />
+      <img src="docs/screenshots/media_details_reminder_tags.png" alt="Reminders and tags screen" width="200" />
+    </td>
+    <td align="center">
+      <strong>Settings</strong><br />
+      <img src="docs/screenshots/settings.png" alt="Settings screen" width="200" />
+    </td>
+  </tr>
+</table>
 
 </details>
 
