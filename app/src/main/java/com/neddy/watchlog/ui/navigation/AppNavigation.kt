@@ -11,7 +11,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -55,7 +55,7 @@ private data class BottomNavItem(
 
 private val bottomNavItems = listOf(
     BottomNavItem(Routes.WATCHLIST, Icons.Filled.Home, R.string.home),
-    BottomNavItem(Routes.SEARCH, Icons.Filled.FormatListBulleted, R.string.watchlist),
+    BottomNavItem(Routes.SEARCH, Icons.AutoMirrored.Filled.FormatListBulleted, R.string.watchlist),
     BottomNavItem(Routes.SETTINGS, Icons.Filled.Settings, R.string.settings)
 )
 

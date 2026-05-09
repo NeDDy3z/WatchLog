@@ -6,7 +6,7 @@ Simple, fast watch tracker for movies and TV shows. 🎬
 ![Language](https://img.shields.io/badge/language-Kotlin-7f52ff)
 
 ## ✨ Overview 
-Watchlog is free clean add-free app for tracking what you have watched, are watching, or want to watch. It focuses on speed and minimal friction: search by title, pick a result from autocomplete, and keep your progress updated without social clutter.
+Watchlog is a free clean add-free app for tracking what you have watched, are watching, or want to watch. It focuses on speed and minimal friction: search by title, pick a result from autocomplete, and keep your progress updated without social clutter.
 
 ## 🔧 Features
 - Fast search with autocomplete backed by **TVDB v4 API**
@@ -67,6 +67,10 @@ Watchlog is free clean add-free app for tracking what you have watched, are watc
 
 ## 🤝 Contributing
 Issues and pull requests are welcome. Please keep PRs focused and include a short test plan.
+
+If building your own APKs, remember to add your API_KEY to local.properties as `TVDB_API_KEY={your api key}`, without it the whisper/autocomplete feature won't work. 
+_The released apk builds already contain my API_KEY._
+
 
 ## 🧾 License
 Free to use for personal and non-commercial purposes. Commercial redistribution is not permitted. Forks are welcome if they include significant changes and clearly note the original source.

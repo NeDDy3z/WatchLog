@@ -1,5 +1,6 @@
 package com.neddy.watchlog.data.remote
 
+import com.neddy.watchlog.BuildConfig
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -28,8 +29,8 @@ interface TvdbApiService {
 
 object TvdbApi {
     private const val BASE_URL = "https://api4.thetvdb.com/v4/"
-    // Not ideal but why does it matter in a school project...
-    private const val API_KEY = "69511197-1bff-4258-8685-57366014dac0"
+
+    private val apiKey = BuildConfig.TVDB_API_KEY
 
     @Volatile private var cachedToken: String? = null
 
@@ -55,7 +56,10 @@ object TvdbApi {
 
     suspend fun ensureToken() {
         if (cachedToken == null) {
-            cachedToken = service.login(TvdbLoginRequest(API_KEY)).data.token
+            require(apiKey.isNotBlank()) {
+                "TVDB_API_KEY is missing. Add it to local.properties."
+            }
+            cachedToken = service.login(TvdbLoginRequest(apiKey)).data.token
         }
     }
 }

@@ -67,12 +67,13 @@ fun MediaItemCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     val style = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium
+                    val lines = if (compact) 1 else 2
                     Text(
                         text = media.title,
                         style = style,
                         color = MaterialTheme.colorScheme.onSurface,
-                        minLines = 2,
-                        maxLines = 2,
+                        minLines = lines,
+                        maxLines = lines,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
@@ -87,7 +88,7 @@ fun MediaItemCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         minLines = 2,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
 
                     Spacer(Modifier.height(2.dp))
