@@ -100,6 +100,8 @@ object SortOrder {
     const val TITLE = "title"
 }
 
+@androidx.annotation.Keep
 enum class WatchlistDisplayMode { LIST, COMPACT_LIST, GRID }
 
+@androidx.annotation.Keep
 enum class AutoBackupFrequency { OFF, DAILY, WEEKLY, MONTHLY }

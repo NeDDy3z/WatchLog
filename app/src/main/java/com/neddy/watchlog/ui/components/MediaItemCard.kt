@@ -37,6 +37,10 @@ fun MediaItemCard(
     val badgeColor = if (isMovie) MovieBadgeColor else TvBadgeColor
     val typeIcon = if (isMovie) Icons.Filled.Movie else Icons.Filled.Tv
 
+    val rowHeight = if (compact) 42.dp else 128.dp
+    val titleTypography = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium
+    val lines = if (compact) 1 else 2
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -45,7 +49,9 @@ fun MediaItemCard(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+        Row(
+            modifier = Modifier.height(rowHeight),
+        ) {
             PosterImage(
                 url = media.posterUrl,
                 title = media.title,
@@ -66,13 +72,12 @@ fun MediaItemCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    val style = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium
                     Text(
                         text = media.title,
-                        style = style,
+                        style = titleTypography,
                         color = MaterialTheme.colorScheme.onSurface,
-                        minLines = 2,
-                        maxLines = 2,
+                        minLines = lines,
+                        maxLines = lines,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
@@ -85,9 +90,9 @@ fun MediaItemCard(
                         text = media.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        minLines = 2,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        minLines = lines,
+                        maxLines = lines,
+                        overflow = TextOverflow.Ellipsis,
                     )
 
                     Spacer(Modifier.height(2.dp))
