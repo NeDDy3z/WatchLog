@@ -35,6 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.Scope
+import com.neddy.watchlog.BuildConfig
 import com.neddy.watchlog.R
 import com.neddy.watchlog.data.preferences.AutoBackupFrequency
 import com.neddy.watchlog.data.preferences.WatchlistDisplayMode
@@ -271,7 +272,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(40.dp))
 
             Text(
-                text =  "WatchLog - Erik Vaněk",
+                text = "WatchLog v${BuildConfig.VERSION_NAME} - Erik Vaněk",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textDecoration = TextDecoration.Underline,

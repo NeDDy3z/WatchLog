@@ -65,8 +65,8 @@ Watchlog is a free clean add-free app for tracking what you have watched, are wa
 ## 📦 Releases 
 - [Releases](../../releases)
 
-## 🤝 Contributing
-Issues and pull requests are welcome. Please keep PRs focused and include a short test plan.
+## 🤝 Contributing / Own compilation
+Issues and pull requests are welcome.
 
 If building your own APKs, remember to add your API_KEY to local.properties as `TVDB_API_KEY={your api key}`, without it the whisper/autocomplete feature won't work. 
 _The released apk builds already contain my API_KEY._
