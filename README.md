@@ -73,7 +73,8 @@ Issues and pull requests are welcome.
 If building your own APKs, remember to add your API_KEY to local.properties as `TVDB_API_KEY={your api key}`, without it the whisper/autocomplete feature won't work. 
 _The released apk builds already contain my API_KEY._
 
-To build a signed release APK from the command line, add your keystore details to local.properties:
+To build a signed release APK from the command line, provide your keystore details as local.properties
+entries, Gradle properties or environment variables (looked up in that order):
 
 ```
 RELEASE_STORE_FILE=/absolute/path/to/keystore.jks
@@ -82,7 +83,8 @@ RELEASE_KEY_ALIAS={key alias}
 RELEASE_KEY_PASSWORD={key password}
 ```
 
-Without them `./gradlew assembleRelease` still works, it just produces an unsigned APK.
+`RELEASE_KEY_ALIAS` defaults to `releasekey` and `RELEASE_KEY_PASSWORD` falls back to the store
+password. Without these `./gradlew assembleRelease` still works, it just produces an unsigned APK.
 
 
 ## 🧾 License

@@ -34,17 +34,23 @@ android {
         buildConfigField("String", "TVDB_API_KEY", "\"$tvdbApiKey\"")
     }
 
-    // Release signing is opt-in, set the RELEASE_* keys in local.properties to enable it
-    val releaseStoreFile = localProperties.getProperty("RELEASE_STORE_FILE")
-        ?.let { rootProject.file(it).takeIf(File::exists) ?: File(it).takeIf(File::exists) }
+    // Release signing is opt-in. Each RELEASE_* value is read from local.properties, a Gradle
+    // property (-P or ~/.gradle/gradle.properties) or an environment variable, in that order.
+    fun signingValue(name: String): String? =
+        (localProperties.getProperty(name) ?: providers.gradleProperty(name).orNull ?: System.getenv(name))
+            ?.takeIf { it.isNotBlank() }
+
+    val releaseStoreFile = signingValue("RELEASE_STORE_FILE")
+        ?.replace(Regex("^~"), System.getProperty("user.home"))
+        ?.let { path -> File(path).takeIf(File::exists) ?: rootProject.file(path).takeIf(File::exists) }
 
     signingConfigs {
         if (releaseStoreFile != null) {
             create("release") {
                 storeFile = releaseStoreFile
-                storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
-                keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
-                keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
+                storePassword = signingValue("RELEASE_STORE_PASSWORD")
+                keyAlias = signingValue("RELEASE_KEY_ALIAS") ?: "releasekey"
+                keyPassword = signingValue("RELEASE_KEY_PASSWORD") ?: signingValue("RELEASE_STORE_PASSWORD")
             }
         }
     }
