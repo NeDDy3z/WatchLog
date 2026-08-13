@@ -25,6 +25,12 @@ class UserPreferencesRepository(private val context: Context) {
         val AUTO_BACKUP_FREQUENCY = stringPreferencesKey("auto_backup_frequency")
         val LAST_BACKUP_AT = longPreferencesKey("last_backup_at")
         val AUTO_BACKUP_ACCESS_TOKEN = stringPreferencesKey("auto_backup_access_token")
+        val SWIPE_LEFT_ACTION = stringPreferencesKey("swipe_left_action")
+        val SWIPE_RIGHT_ACTION = stringPreferencesKey("swipe_right_action")
+        val SWIPE_WATCHED_SCOPE = stringPreferencesKey("swipe_watched_scope")
+        val UPDATE_CHECK_ENABLED = booleanPreferencesKey("update_check_enabled")
+        val SKIPPED_UPDATE_VERSION = stringPreferencesKey("skipped_update_version")
+        val LAST_UPDATE_CHECK_AT = longPreferencesKey("last_update_check_at")
 
         @Volatile
         private var INSTANCE: UserPreferencesRepository? = null
@@ -65,6 +71,30 @@ class UserPreferencesRepository(private val context: Context) {
         prefs[AUTO_BACKUP_ACCESS_TOKEN] ?: ""
     }
 
+    val swipeLeftAction: Flow<SwipeAction> = context.dataStore.data.map { prefs ->
+        SwipeAction.entries.find { it.name == prefs[SWIPE_LEFT_ACTION] } ?: SwipeAction.DELETE
+    }
+
+    val swipeRightAction: Flow<SwipeAction> = context.dataStore.data.map { prefs ->
+        SwipeAction.entries.find { it.name == prefs[SWIPE_RIGHT_ACTION] } ?: SwipeAction.MARK_WATCHED
+    }
+
+    val swipeWatchedScope: Flow<SwipeWatchedScope> = context.dataStore.data.map { prefs ->
+        SwipeWatchedScope.entries.find { it.name == prefs[SWIPE_WATCHED_SCOPE] } ?: SwipeWatchedScope.WHOLE_SHOW
+    }
+
+    val updateCheckEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[UPDATE_CHECK_ENABLED] ?: true
+    }
+
+    val skippedUpdateVersion: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[SKIPPED_UPDATE_VERSION] ?: ""
+    }
+
+    val lastUpdateCheckAt: Flow<Long> = context.dataStore.data.map { prefs ->
+        prefs[LAST_UPDATE_CHECK_AT] ?: 0L
+    }
+
     suspend fun setSortOrder(order: String) {
         context.dataStore.edit { it[SORT_ORDER] = order }
     }
@@ -92,6 +122,30 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setAutoBackupAccessToken(token: String) {
         context.dataStore.edit { it[AUTO_BACKUP_ACCESS_TOKEN] = token }
     }
+
+    suspend fun setSwipeLeftAction(action: SwipeAction) {
+        context.dataStore.edit { it[SWIPE_LEFT_ACTION] = action.name }
+    }
+
+    suspend fun setSwipeRightAction(action: SwipeAction) {
+        context.dataStore.edit { it[SWIPE_RIGHT_ACTION] = action.name }
+    }
+
+    suspend fun setSwipeWatchedScope(scope: SwipeWatchedScope) {
+        context.dataStore.edit { it[SWIPE_WATCHED_SCOPE] = scope.name }
+    }
+
+    suspend fun setUpdateCheckEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[UPDATE_CHECK_ENABLED] = enabled }
+    }
+
+    suspend fun setSkippedUpdateVersion(version: String) {
+        context.dataStore.edit { it[SKIPPED_UPDATE_VERSION] = version }
+    }
+
+    suspend fun setLastUpdateCheckAt(millis: Long) {
+        context.dataStore.edit { it[LAST_UPDATE_CHECK_AT] = millis }
+    }
 }
 
 object SortOrder {
@@ -105,3 +159,11 @@ enum class WatchlistDisplayMode { LIST, COMPACT_LIST, GRID }
 
 @androidx.annotation.Keep
 enum class AutoBackupFrequency { OFF, DAILY, WEEKLY, MONTHLY }
+
+/** What a swipe in a given direction does on a watchlist card. */
+@androidx.annotation.Keep
+enum class SwipeAction { NONE, MARK_WATCHED, DELETE }
+
+/** How much of a TV show a "mark as watched" swipe covers. Movies are always finished whole. */
+@androidx.annotation.Keep
+enum class SwipeWatchedScope { WHOLE_SHOW, NEXT_SEASON, NEXT_EPISODE }

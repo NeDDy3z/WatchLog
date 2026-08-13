@@ -6,9 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.neddy.watchlog.data.backup.AutoBackupScheduler
 import com.neddy.watchlog.data.backup.DriveBackupRepository
 import com.neddy.watchlog.data.preferences.AutoBackupFrequency
+import com.neddy.watchlog.data.preferences.SwipeAction
+import com.neddy.watchlog.data.preferences.SwipeWatchedScope
 import com.neddy.watchlog.data.preferences.UserPreferencesRepository
 import com.neddy.watchlog.data.preferences.WatchlistDisplayMode
 import com.neddy.watchlog.data.repository.MediaRepository
+import com.neddy.watchlog.data.update.UpdateRepository
+import com.neddy.watchlog.data.update.UpdateState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +34,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val prefsRepository = UserPreferencesRepository.getInstance(application)
     private val mediaRepository = MediaRepository.getInstance(application)
     private val driveBackupRepository = DriveBackupRepository.getInstance(application)
+    private val updateRepository = UpdateRepository.getInstance(application)
 
     val watchedMoviesCount: StateFlow<Int> = mediaRepository.getWatchedMoviesCount().stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5_000), 0
@@ -59,6 +64,28 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L
     )
 
+    val swipeLeftAction: StateFlow<SwipeAction> = prefsRepository.swipeLeftAction.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), SwipeAction.DELETE
+    )
+
+    val swipeRightAction: StateFlow<SwipeAction> = prefsRepository.swipeRightAction.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), SwipeAction.MARK_WATCHED
+    )
+
+    val swipeWatchedScope: StateFlow<SwipeWatchedScope> = prefsRepository.swipeWatchedScope.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), SwipeWatchedScope.WHOLE_SHOW
+    )
+
+    val updateCheckEnabled: StateFlow<Boolean> = prefsRepository.updateCheckEnabled.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), true
+    )
+
+    val lastUpdateCheckAt: StateFlow<Long> = prefsRepository.lastUpdateCheckAt.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L
+    )
+
+    val updateState: StateFlow<UpdateState> = updateRepository.state
+
     private val _backupState = MutableStateFlow<BackupState>(BackupState.Idle)
     val backupState: StateFlow<BackupState> = _backupState.asStateFlow()
 
@@ -74,6 +101,30 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setShowWatchedDefault(show: Boolean) {
         viewModelScope.launch { prefsRepository.setShowWatchedDefault(show) }
+    }
+
+    fun setSwipeLeftAction(action: SwipeAction) {
+        viewModelScope.launch { prefsRepository.setSwipeLeftAction(action) }
+    }
+
+    fun setSwipeRightAction(action: SwipeAction) {
+        viewModelScope.launch { prefsRepository.setSwipeRightAction(action) }
+    }
+
+    fun setSwipeWatchedScope(scope: SwipeWatchedScope) {
+        viewModelScope.launch { prefsRepository.setSwipeWatchedScope(scope) }
+    }
+
+    fun setUpdateCheckEnabled(enabled: Boolean) {
+        viewModelScope.launch { prefsRepository.setUpdateCheckEnabled(enabled) }
+    }
+
+    fun checkForUpdates() {
+        viewModelScope.launch { updateRepository.checkNow() }
+    }
+
+    fun clearUpdateState() {
+        updateRepository.dismiss()
     }
 
     fun setAutoBackupFrequency(frequency: AutoBackupFrequency) {

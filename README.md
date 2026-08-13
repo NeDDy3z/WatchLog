@@ -9,8 +9,10 @@ Simple, fast watch tracker for movies and TV shows. 🎬
 Watchlog is a free clean add-free app for tracking what you have watched, are watching, or want to watch. It focuses on speed and minimal friction: search by title, pick a result from autocomplete, and keep your progress updated without social clutter.
 
 ## 🔧 Features
-- Fast search with autocomplete backed by **TVDB v4 API**
-- Manual add/edit for missing titles
+- Fast search with autocomplete backed by **TVDB v4 API** (up to 10 suggestions)
+- Manual add/edit for missing titles, with quick add straight from an empty watchlist search
+- Configurable swipe gestures (mark as watched / delete) with a choice of how much a TV show gets marked
+- In-app update check against the GitHub releases page
 - Progress tracking for movies and TV shows (season/episode)
 - Automatic timestamps for added and last-watched dates
 - Optional tags for organizing your list

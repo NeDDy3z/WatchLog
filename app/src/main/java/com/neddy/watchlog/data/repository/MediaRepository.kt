@@ -20,7 +20,16 @@ import com.neddy.watchlog.data.backup.BackupProgress
 import com.neddy.watchlog.data.backup.BackupSeason
 import com.neddy.watchlog.data.backup.BackupWatchedEpisode
 import com.neddy.watchlog.data.backup.WatchlogBackup
+import com.neddy.watchlog.data.preferences.SwipeWatchedScope
 import kotlinx.coroutines.flow.Flow
+
+/** What a [MediaRepository.markWatched] call actually changed. */
+sealed interface MarkWatchedOutcome {
+    data object WholeWatched : MarkWatchedOutcome
+    data class SeasonWatched(val season: Int) : MarkWatchedOutcome
+    data class EpisodeWatched(val season: Int, val episode: Int) : MarkWatchedOutcome
+    data object AlreadyWatched : MarkWatchedOutcome
+}
 
 class MediaRepository private constructor(
     private val context: Context,
@@ -152,6 +161,69 @@ class MediaRepository private constructor(
     suspend fun unmarkSeasonWatched(mediaId: Long, seasonNumber: Int) {
         watchedEpisodeDao.deleteWatchedEpisodesForSeason(mediaId, seasonNumber)
         touchProgress(mediaId)
+    }
+
+    /**
+     * Marks a media item as watched according to [scope]. Movies (and TV shows without season
+     * info) are always finished as a whole, the scope only applies to TV shows with seasons.
+     */
+    suspend fun markWatched(mediaId: Long, scope: SwipeWatchedScope): MarkWatchedOutcome {
+        val media = mediaItemDao.getMediaById(mediaId) ?: return MarkWatchedOutcome.AlreadyWatched
+        val seasons = if (media.mediaType == "TV Show") seasonInfoDao.getSeasonsForMediaSync(mediaId) else emptyList()
+
+        if (seasons.isEmpty()) return finishWithoutEpisodes(mediaId)
+
+        val watched = watchedEpisodeDao.getWatchedEpisodesForMediaSync(mediaId)
+            .map { it.seasonNumber to it.episodeNumber }
+            .toSet()
+
+        return when (scope) {
+            SwipeWatchedScope.WHOLE_SHOW -> {
+                val missing = seasons.flatMap { season ->
+                    (1..season.episodeCount).map { season.seasonNumber to it }
+                }.filter { it !in watched }
+                if (missing.isEmpty()) return MarkWatchedOutcome.AlreadyWatched
+                watchedEpisodeDao.insertWatchedEpisodes(
+                    missing.map { (s, e) -> WatchedEpisodeEntity(mediaId = mediaId, seasonNumber = s, episodeNumber = e) }
+                )
+                touchProgress(mediaId)
+                MarkWatchedOutcome.WholeWatched
+            }
+
+            SwipeWatchedScope.NEXT_SEASON -> {
+                val next = seasons.firstOrNull { season ->
+                    (1..season.episodeCount).any { (season.seasonNumber to it) !in watched }
+                } ?: return MarkWatchedOutcome.AlreadyWatched
+                markSeasonWatched(mediaId, next.seasonNumber, next.episodeCount)
+                MarkWatchedOutcome.SeasonWatched(next.seasonNumber)
+            }
+
+            SwipeWatchedScope.NEXT_EPISODE -> {
+                val next = seasons.firstNotNullOfOrNull { season ->
+                    (1..season.episodeCount)
+                        .firstOrNull { (season.seasonNumber to it) !in watched }
+                        ?.let { season.seasonNumber to it }
+                } ?: return MarkWatchedOutcome.AlreadyWatched
+                addWatchedEpisode(mediaId, next.first, next.second)
+                MarkWatchedOutcome.EpisodeWatched(next.first, next.second)
+            }
+        }
+    }
+
+    private suspend fun finishWithoutEpisodes(mediaId: Long): MarkWatchedOutcome {
+        val existing = watchProgressDao.getProgressForMediaSync(mediaId)
+        if (existing?.isFinished == true) return MarkWatchedOutcome.AlreadyWatched
+        saveProgress(
+            WatchProgressEntity(
+                id = existing?.id ?: 0,
+                mediaId = mediaId,
+                currentSeason = existing?.currentSeason,
+                currentEpisode = existing?.currentEpisode,
+                isFinished = true,
+                lastWatchedDate = System.currentTimeMillis()
+            )
+        )
+        return MarkWatchedOutcome.WholeWatched
     }
 
     suspend fun getFullBackup(): WatchlogBackup {

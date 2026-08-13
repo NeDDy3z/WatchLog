@@ -10,6 +10,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
+import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Home
@@ -19,6 +20,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -29,22 +32,29 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.neddy.watchlog.R
+import com.neddy.watchlog.data.update.UpdateRepository
+import com.neddy.watchlog.data.update.UpdateState
+import com.neddy.watchlog.ui.components.UpdateAvailableDialog
 import com.neddy.watchlog.ui.screens.detail.MediaDetailScreen
 import com.neddy.watchlog.ui.screens.manualadd.ManualAddScreen
 import com.neddy.watchlog.ui.screens.search.SearchScreen
 import com.neddy.watchlog.ui.screens.settings.SettingsScreen
 import com.neddy.watchlog.ui.screens.watchlist.WatchlistScreen
+import kotlinx.coroutines.launch
 
 object Routes {
     const val WATCHLIST = "watchlist"
     const val SEARCH = "search"
     const val SETTINGS = "settings"
     const val DETAIL = "detail/{mediaId}"
-    const val MANUAL_ADD = "manual_add?mediaId={mediaId}"
+    const val MANUAL_ADD = "manual_add?mediaId={mediaId}&title={title}"
 
     fun detail(mediaId: Long) = "detail/$mediaId"
-    fun manualAdd(mediaId: Long? = null) =
-        if (mediaId != null) "manual_add?mediaId=$mediaId" else "manual_add"
+    fun manualAdd(mediaId: Long? = null, title: String? = null): String {
+        val id = mediaId ?: -1L
+        val encodedTitle = Uri.encode(title.orEmpty())
+        return "manual_add?mediaId=$id&title=$encodedTitle"
+    }
 }
 
 private data class BottomNavItem(
@@ -67,6 +77,26 @@ fun AppNavigation(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+
+    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+    val updateRepository = remember { UpdateRepository.getInstance(context) }
+    val updateState by updateRepository.state.collectAsState()
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) { updateRepository.checkAutomatically() }
+
+    (updateState as? UpdateState.Available)?.let { available ->
+        UpdateAvailableDialog(
+            info = available.info,
+            onDownload = {
+                uriHandler.openUri(available.info.releaseUrl)
+                updateRepository.dismiss()
+            },
+            onLater = { updateRepository.dismiss() },
+            onNever = { scope.launch { updateRepository.skipVersion(available.info.version) } }
+        )
+    }
 
     LaunchedEffect(initialMediaId) {
         initialMediaId?.let {
@@ -133,7 +163,7 @@ fun AppNavigation(
             composable(Routes.SEARCH) {
                 SearchScreen(
                     onNavigateToDetail = { id -> navController.navigate(Routes.detail(id)) },
-                    onNavigateToAdd = { navController.navigate(Routes.manualAdd()) },
+                    onNavigateToAdd = { title -> navController.navigate(Routes.manualAdd(title = title)) },
                     fabVisible = showBottomBar
                 )
             }
@@ -155,6 +185,10 @@ fun AppNavigation(
                     navArgument("mediaId") {
                         type = NavType.LongType
                         defaultValue = -1L
+                    },
+                    navArgument("title") {
+                        type = NavType.StringType
+                        defaultValue = ""
                     }
                 )
             ) {

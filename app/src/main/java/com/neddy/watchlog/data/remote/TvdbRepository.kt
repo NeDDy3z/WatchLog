@@ -5,7 +5,7 @@ class TvdbRepository {
 
     suspend fun search(query: String): List<TvdbSearchItem> {
         TvdbApi.ensureToken()
-        return service.search(query, 5).data
+        return service.search(query, MAX_SUGGESTIONS).data
             ?.filter { it.type == "series" || it.type == "movie" }
             ?.filter { !it.tvdbId.isNullOrBlank() }
             ?: emptyList()
@@ -20,5 +20,9 @@ class TvdbRepository {
             .entries
             .sortedBy { it.key }
             .map { (num, eps) -> TvdbSeasonInfo(num, eps.size) }
+    }
+
+    companion object {
+        const val MAX_SUGGESTIONS = 10
     }
 }

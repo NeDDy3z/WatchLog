@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.neddy.watchlog.R
+import com.neddy.watchlog.data.remote.TvdbRepository
 import com.neddy.watchlog.data.remote.TvdbSearchItem
 
 @Composable
@@ -134,7 +135,7 @@ fun ManualAddScreen(
                                 )
                             }
                         }
-                        suggestions.take(5).forEach { suggestion ->
+                        suggestions.take(TvdbRepository.MAX_SUGGESTIONS).forEach { suggestion ->
                             SuggestionItem(
                                 suggestion = suggestion,
                                 onClick = { viewModel.selectSuggestion(suggestion) }

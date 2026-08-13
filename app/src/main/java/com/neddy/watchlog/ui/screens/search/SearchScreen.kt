@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Movie
@@ -43,6 +44,7 @@ import coil.compose.AsyncImage
 import com.neddy.watchlog.R
 import com.neddy.watchlog.data.local.entity.MediaWithProgress
 import com.neddy.watchlog.data.preferences.SortOrder
+import com.neddy.watchlog.data.preferences.SwipeAction
 import com.neddy.watchlog.data.preferences.WatchlistDisplayMode
 import com.neddy.watchlog.ui.components.MediaItemCard
 import com.neddy.watchlog.ui.theme.*
@@ -50,7 +52,7 @@ import com.neddy.watchlog.ui.theme.*
 @Composable
 fun SearchScreen(
     onNavigateToDetail: (Long) -> Unit,
-    onNavigateToAdd: () -> Unit,
+    onNavigateToAdd: (String?) -> Unit,
     fabVisible: Boolean = true,
     viewModel: SearchViewModel = viewModel()
 ) {
@@ -60,10 +62,21 @@ fun SearchScreen(
     val showWatched by viewModel.showWatched.collectAsState()
     val mediaList by viewModel.mediaList.collectAsState()
     val displayMode by viewModel.displayMode.collectAsState()
+    val swipeLeftAction by viewModel.swipeLeftAction.collectAsState()
+    val swipeRightAction by viewModel.swipeRightAction.collectAsState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        viewModel.messages.collect { message ->
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(message)
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0.dp),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Column(
                 modifier = Modifier
@@ -169,7 +182,7 @@ fun SearchScreen(
                 exit = fadeOut(tween(200))
             ) {
                 FloatingActionButton(
-                    onClick = onNavigateToAdd,
+                    onClick = { onNavigateToAdd(null) },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     shape = CircleShape
@@ -186,14 +199,45 @@ fun SearchScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = if (query.isNotBlank()) stringResource(R.string.no_results)
-                           else stringResource(R.string.empty_watchlist),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(32.dp)
-                )
+                ) {
+                    Text(
+                        text = if (query.isNotBlank()) stringResource(R.string.no_results)
+                               else stringResource(R.string.empty_watchlist),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    if (query.isNotBlank()) {
+                        Spacer(Modifier.height(16.dp))
+                        Button(
+                            onClick = { onNavigateToAdd(query.trim()) },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Icon(Icons.Filled.Add, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "Add \"${query.trim()}\"",
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "Opens the add page with suggestions for this title",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
         } else {
             when (displayMode) {
@@ -203,10 +247,13 @@ fun SearchScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(mediaList, key = { it.media.id }) { item ->
-                        SwipeToDeleteCard(
+                        SwipeActionCard(
                             item = item,
                             compact = false,
+                            leftAction = swipeLeftAction,
+                            rightAction = swipeRightAction,
                             onDelete = { viewModel.deleteMedia(item.media.id) },
+                            onMarkWatched = { viewModel.markWatched(item) },
                             onClick = { onNavigateToDetail(item.media.id) }
                         )
                     }
@@ -219,10 +266,13 @@ fun SearchScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(mediaList, key = { it.media.id }) { item ->
-                        SwipeToDeleteCard(
+                        SwipeActionCard(
                             item = item,
                             compact = true,
+                            leftAction = swipeLeftAction,
+                            rightAction = swipeRightAction,
                             onDelete = { viewModel.deleteMedia(item.media.id) },
+                            onMarkWatched = { viewModel.markWatched(item) },
                             onClick = { onNavigateToDetail(item.media.id) }
                         )
                     }
@@ -388,21 +438,36 @@ private fun WatchlistGridCard(item: MediaWithProgress, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SwipeToDeleteCard(
+private fun SwipeActionCard(
     item: MediaWithProgress,
     compact: Boolean,
+    leftAction: SwipeAction,
+    rightAction: SwipeAction,
     onDelete: () -> Unit,
+    onMarkWatched: () -> Unit,
     onClick: () -> Unit
 ) {
     var showConfirm by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
+    // The state keeps the first confirmValueChange lambda, so read the settings through these
+    val currentLeftAction by rememberUpdatedState(leftAction)
+    val currentRightAction by rememberUpdatedState(rightAction)
+    val currentOnMarkWatched by rememberUpdatedState(onMarkWatched)
+
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                showConfirm = true
-                true
-            } else false
+            val action = when (value) {
+                SwipeToDismissBoxValue.EndToStart -> currentLeftAction
+                SwipeToDismissBoxValue.StartToEnd -> currentRightAction
+                SwipeToDismissBoxValue.Settled -> SwipeAction.NONE
+            }
+            when (action) {
+                // Deleting keeps the card swiped away until the dialog is answered
+                SwipeAction.DELETE -> { showConfirm = true; true }
+                SwipeAction.MARK_WATCHED -> { currentOnMarkWatched(); false }
+                SwipeAction.NONE -> false
+            }
         }
     )
 
@@ -433,18 +498,30 @@ private fun SwipeToDeleteCard(
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(vertical = 2.dp)
-                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                    .padding(end = 20.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(24.dp))
+            val swipingLeft = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart
+            val action = if (swipingLeft) leftAction else rightAction
+            if (action != SwipeAction.NONE) {
+                val isDelete = action == SwipeAction.DELETE
+                val tint = if (isDelete) MaterialTheme.colorScheme.error else FinishedColor
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(vertical = 2.dp)
+                        .background(tint.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = if (swipingLeft) Alignment.CenterEnd else Alignment.CenterStart
+                ) {
+                    Icon(
+                        if (isDelete) Icons.Filled.Delete else Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = tint,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         },
-        enableDismissFromStartToEnd = false
+        enableDismissFromStartToEnd = rightAction != SwipeAction.NONE,
+        enableDismissFromEndToStart = leftAction != SwipeAction.NONE
     ) {
         MediaItemCard(item = item, onClick = onClick, compact = compact)
     }

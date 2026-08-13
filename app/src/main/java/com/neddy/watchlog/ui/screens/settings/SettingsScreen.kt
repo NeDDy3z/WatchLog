@@ -15,8 +15,12 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.PlaylistAddCheck
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
@@ -38,7 +42,10 @@ import com.google.android.gms.common.api.Scope
 import com.neddy.watchlog.BuildConfig
 import com.neddy.watchlog.R
 import com.neddy.watchlog.data.preferences.AutoBackupFrequency
+import com.neddy.watchlog.data.preferences.SwipeAction
+import com.neddy.watchlog.data.preferences.SwipeWatchedScope
 import com.neddy.watchlog.data.preferences.WatchlistDisplayMode
+import com.neddy.watchlog.data.update.UpdateState
 import com.neddy.watchlog.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -57,6 +64,12 @@ fun SettingsScreen(
     val backupState by viewModel.backupState.collectAsState()
     val autoBackupFrequency by viewModel.autoBackupFrequency.collectAsState()
     val lastBackupAt by viewModel.lastBackupAt.collectAsState()
+    val swipeLeftAction by viewModel.swipeLeftAction.collectAsState()
+    val swipeRightAction by viewModel.swipeRightAction.collectAsState()
+    val swipeWatchedScope by viewModel.swipeWatchedScope.collectAsState()
+    val updateCheckEnabled by viewModel.updateCheckEnabled.collectAsState()
+    val lastUpdateCheckAt by viewModel.lastUpdateCheckAt.collectAsState()
+    val updateState by viewModel.updateState.collectAsState()
 
     val uriHandler = LocalUriHandler.current
     val gitHubLink = "https://github.com/NeDDy3z/watchlog"
@@ -120,6 +133,21 @@ fun SettingsScreen(
                 viewModel.setBackupError("Authorization failed: ${e.message}")
                 viewModel.pendingAction = null
             }
+    }
+
+    // The available-update dialog itself lives in AppNavigation, only report the quiet outcomes
+    LaunchedEffect(updateState) {
+        when (val s = updateState) {
+            is UpdateState.UpToDate -> {
+                snackbarHostState.showSnackbar("You are on the latest version")
+                viewModel.clearUpdateState()
+            }
+            is UpdateState.Error -> {
+                snackbarHostState.showSnackbar(s.message)
+                viewModel.clearUpdateState()
+            }
+            else -> {}
+        }
     }
 
     LaunchedEffect(backupState) {
@@ -234,6 +262,31 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(20.dp))
+            SettingsSectionHeader("Gestures")
+            Spacer(Modifier.height(8.dp))
+
+            GesturesSection(
+                leftAction = swipeLeftAction,
+                rightAction = swipeRightAction,
+                watchedScope = swipeWatchedScope,
+                onLeftActionSelected = viewModel::setSwipeLeftAction,
+                onRightActionSelected = viewModel::setSwipeRightAction,
+                onWatchedScopeSelected = viewModel::setSwipeWatchedScope
+            )
+
+            Spacer(Modifier.height(20.dp))
+            SettingsSectionHeader("Updates")
+            Spacer(Modifier.height(8.dp))
+
+            UpdatesSection(
+                checking = updateState is UpdateState.Checking,
+                autoCheckEnabled = updateCheckEnabled,
+                lastCheckedAt = lastUpdateCheckAt,
+                onCheckClick = viewModel::checkForUpdates,
+                onAutoCheckChanged = viewModel::setUpdateCheckEnabled
+            )
+
+            Spacer(Modifier.height(20.dp))
             SettingsSectionHeader("Backup & Restore")
             Spacer(Modifier.height(8.dp))
 
@@ -308,6 +361,155 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
                 .padding(16.dp),
             content = content
         )
+    }
+}
+
+@Composable
+private fun GesturesSection(
+    leftAction: SwipeAction,
+    rightAction: SwipeAction,
+    watchedScope: SwipeWatchedScope,
+    onLeftActionSelected: (SwipeAction) -> Unit,
+    onRightActionSelected: (SwipeAction) -> Unit,
+    onWatchedScopeSelected: (SwipeWatchedScope) -> Unit
+) {
+    val actionOptions = listOf(
+        SwipeAction.MARK_WATCHED to "Mark watched",
+        SwipeAction.DELETE to "Delete",
+        SwipeAction.NONE to "Nothing"
+    )
+
+    SettingsCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            DropdownSettingRow(
+                icon = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                title = "Swipe left",
+                subtitle = "Action on a watchlist card",
+                currentLabel = actionOptions.first { it.first == leftAction }.second,
+                options = actionOptions,
+                onSelected = onLeftActionSelected
+            )
+            DropdownSettingRow(
+                icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                title = "Swipe right",
+                subtitle = "Action on a watchlist card",
+                currentLabel = actionOptions.first { it.first == rightAction }.second,
+                options = actionOptions,
+                onSelected = onRightActionSelected
+            )
+            if (leftAction == SwipeAction.MARK_WATCHED || rightAction == SwipeAction.MARK_WATCHED) {
+                val scopeOptions = listOf(
+                    SwipeWatchedScope.WHOLE_SHOW to "Whole show",
+                    SwipeWatchedScope.NEXT_SEASON to "Next season",
+                    SwipeWatchedScope.NEXT_EPISODE to "Next episode"
+                )
+                DropdownSettingRow(
+                    icon = Icons.AutoMirrored.Filled.PlaylistAddCheck,
+                    title = "Mark watched covers",
+                    subtitle = "TV shows only, movies are always finished whole",
+                    currentLabel = scopeOptions.first { it.first == watchedScope }.second,
+                    options = scopeOptions,
+                    onSelected = onWatchedScopeSelected
+                )
+            }
+            Text(
+                text = "Deleting always asks for confirmation.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun UpdatesSection(
+    checking: Boolean,
+    autoCheckEnabled: Boolean,
+    lastCheckedAt: Long,
+    onCheckClick: () -> Unit,
+    onAutoCheckChanged: (Boolean) -> Unit
+) {
+    SettingsCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            BackupActionRow(
+                icon = Icons.Filled.SystemUpdate,
+                title = "Check for updates",
+                subtitle = if (lastCheckedAt <= 0L) "Version ${BuildConfig.VERSION_NAME}, never checked"
+                           else "Version ${BuildConfig.VERSION_NAME}, checked ${formatDateTime(lastCheckedAt)}",
+                buttonLabel = "Check",
+                loading = checking,
+                onClick = onCheckClick
+            )
+            ToggleSettingRow(
+                icon = Icons.Filled.AccessTime,
+                title = "Check automatically",
+                subtitle = "Look for new releases on GitHub once a day",
+                checked = autoCheckEnabled,
+                onCheckedChange = onAutoCheckChanged
+            )
+        }
+    }
+}
+
+@Composable
+private fun <T> DropdownSettingRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    currentLabel: String,
+    options: List<Pair<T, String>>,
+    onSelected: (T) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().height(40.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+            Column {
+                Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Text(currentLabel, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                Icon(
+                    Icons.Filled.ArrowDropDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                options.forEach { (value, label) ->
+                    val isSelected = label == currentLabel
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        onClick = {
+                            onSelected(value)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -470,10 +672,11 @@ private fun AutoBackupRow(
     }
 }
 
-private fun formatBackupDate(millis: Long): String {
-    val adjustedMillis = millis + 60_000L
+private fun formatBackupDate(millis: Long): String = formatDateTime(millis + 60_000L)
+
+private fun formatDateTime(millis: Long): String {
     val sdf = SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
-    return sdf.format(Date(adjustedMillis))
+    return sdf.format(Date(millis))
 }
 
 @Composable

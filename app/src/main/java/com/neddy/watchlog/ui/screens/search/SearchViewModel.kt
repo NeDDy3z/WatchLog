@@ -5,8 +5,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.neddy.watchlog.data.local.entity.MediaWithProgress
 import com.neddy.watchlog.data.preferences.SortOrder
+import com.neddy.watchlog.data.preferences.SwipeAction
+import com.neddy.watchlog.data.preferences.SwipeWatchedScope
 import com.neddy.watchlog.data.preferences.UserPreferencesRepository
 import com.neddy.watchlog.data.preferences.WatchlistDisplayMode
+import com.neddy.watchlog.data.repository.MarkWatchedOutcome
 import com.neddy.watchlog.data.repository.MediaRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -37,6 +40,22 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     val displayMode: StateFlow<WatchlistDisplayMode> = prefsRepository.watchlistDisplayMode.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5_000), WatchlistDisplayMode.LIST
     )
+
+    val swipeLeftAction: StateFlow<SwipeAction> = prefsRepository.swipeLeftAction.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), SwipeAction.DELETE
+    )
+
+    val swipeRightAction: StateFlow<SwipeAction> = prefsRepository.swipeRightAction.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), SwipeAction.MARK_WATCHED
+    )
+
+    // Read imperatively when a swipe lands, so it has to be collected eagerly
+    private val swipeWatchedScope: StateFlow<SwipeWatchedScope> = prefsRepository.swipeWatchedScope.stateIn(
+        viewModelScope, SharingStarted.Eagerly, SwipeWatchedScope.WHOLE_SHOW
+    )
+
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val messages: SharedFlow<String> = _messages.asSharedFlow()
 
     private val debouncedQuery: Flow<String> = _searchQuery.debounce(300L)
 
@@ -78,4 +97,19 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch { prefsRepository.setShowWatchedDefault(!showWatched.value) }
     }
     fun deleteMedia(id: Long) { viewModelScope.launch { repository.deleteMediaById(id) } }
+
+    fun markWatched(item: MediaWithProgress) {
+        viewModelScope.launch {
+            val title = item.media.title
+            val outcome = repository.markWatched(item.media.id, swipeWatchedScope.value)
+            _messages.tryEmit(
+                when (outcome) {
+                    is MarkWatchedOutcome.WholeWatched -> "$title marked as watched"
+                    is MarkWatchedOutcome.SeasonWatched -> "$title season ${outcome.season} marked as watched"
+                    is MarkWatchedOutcome.EpisodeWatched -> "$title S${outcome.season}E${outcome.episode} marked as watched"
+                    is MarkWatchedOutcome.AlreadyWatched -> "$title is already fully watched"
+                }
+            )
+        }
+    }
 }

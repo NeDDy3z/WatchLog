@@ -53,6 +53,9 @@ class ManualAddViewModel(
     private val editMediaId: Long? =
         savedStateHandle.get<Long>("mediaId")?.takeIf { it != -1L }
 
+    private val prefillTitle: String =
+        savedStateHandle.get<String>("title").orEmpty().trim()
+
     private val _uiState = MutableStateFlow(ManualAddUiState())
     val uiState: StateFlow<ManualAddUiState> = _uiState.asStateFlow()
 
@@ -86,22 +89,32 @@ class ManualAddViewModel(
             }
         }
 
+        // Came from an empty watchlist search: prefill the title and show the whispers right away
+        if (editMediaId == null && prefillTitle.isNotEmpty()) {
+            _uiState.value = _uiState.value.copy(title = prefillTitle)
+            if (prefillTitle.length >= 2) {
+                viewModelScope.launch { runTitleSearch(prefillTitle) }
+            }
+        }
+
         viewModelScope.launch {
             titleInputFlow
                 .debounce(400)
                 .filter { it.length >= 2 }
-                .collect { query ->
-                    _isSearching.value = true
-                    val duplicate = editMediaId == null && repository.existsByTitle(query.trim())
-                    _uiState.value = _uiState.value.copy(isDuplicate = duplicate)
-                    try {
-                        _searchSuggestions.value = tvdbRepository.search(query)
-                    } catch (e: Exception) {
-                        _searchSuggestions.value = emptyList()
-                    } finally {
-                        _isSearching.value = false
-                    }
-                }
+                .collect { query -> runTitleSearch(query) }
+        }
+    }
+
+    private suspend fun runTitleSearch(query: String) {
+        _isSearching.value = true
+        val duplicate = editMediaId == null && repository.existsByTitle(query.trim())
+        _uiState.value = _uiState.value.copy(isDuplicate = duplicate)
+        try {
+            _searchSuggestions.value = tvdbRepository.search(query)
+        } catch (e: Exception) {
+            _searchSuggestions.value = emptyList()
+        } finally {
+            _isSearching.value = false
         }
     }
 
