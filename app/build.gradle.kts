@@ -1,3 +1,4 @@
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -33,6 +34,21 @@ android {
         buildConfigField("String", "TVDB_API_KEY", "\"$tvdbApiKey\"")
     }
 
+    // Release signing is opt-in, set the RELEASE_* keys in local.properties to enable it
+    val releaseStoreFile = localProperties.getProperty("RELEASE_STORE_FILE")
+        ?.let { rootProject.file(it).takeIf(File::exists) ?: File(it).takeIf(File::exists) }
+
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = releaseStoreFile
+                storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
+                keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
+                keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -40,6 +56,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {
